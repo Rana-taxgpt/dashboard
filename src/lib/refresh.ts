@@ -181,13 +181,13 @@ export async function refreshAds() {
     const until = addDays(today, -1);
     const plan = planWindows(until, await earliestDay());
     const refreshedAt = new Date().toISOString();
+    for (const period of plan.periods) {
+      await savePeriod(period.period, period, account.currency, refreshedAt);
+    }
     const recent = await saveDays(plan.recent, account.currency, refreshedAt);
     const backfill = plan.backfill
       ? await saveDays(plan.backfill, account.currency, refreshedAt)
       : null;
-    for (const period of plan.periods) {
-      await savePeriod(period.period, period, account.currency, refreshedAt);
-    }
     return {
       skipped: false as const,
       accountId: account.id,

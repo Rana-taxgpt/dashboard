@@ -91,7 +91,28 @@ function periodFacts(period: Period) {
   return { cpa, cpl, cpm };
 }
 
-export function Dashboard({ data, email }: { data: DashboardModel; email: string }) {
+function RefreshForm({ label }: { label: string }) {
+  return (
+    <form action="/api/cron/refresh" method="post">
+      <button
+        className="border border-[#1b1915] bg-[#1b1915] px-4 py-2 text-sm text-[#efece4]"
+        type="submit"
+      >
+        {label}
+      </button>
+    </form>
+  );
+}
+
+export function Dashboard({
+  data,
+  email,
+  error,
+}: {
+  data: DashboardModel;
+  email: string;
+  error?: string;
+}) {
   const current = data.current;
   const previous = data.previous;
   const currency = current?.currency ?? "USD";
@@ -112,6 +133,13 @@ export function Dashboard({ data, email }: { data: DashboardModel; email: string
         </div>
         <div className="text-right">
           <p className="text-sm text-[#6f6a62]">{email}</p>
+          {data.status !== "unconfigured" ? (
+            <form action="/api/cron/refresh" method="post">
+              <button className="mt-2 text-sm underline decoration-[#cfc6b8] underline-offset-4" type="submit">
+                Refresh
+              </button>
+            </form>
+          ) : null}
           <form
             action={async () => {
               "use server";
@@ -129,17 +157,22 @@ export function Dashboard({ data, email }: { data: DashboardModel; email: string
         <section className="mt-10 max-w-xl">
           <h2 className="text-xl font-semibold">Database is not connected</h2>
           <p className="mt-3 text-[#6f6a62]">
-            Add DATABASE_URL, then run the hourly refresh. Spend, demos, and CPA show up after the first successful run.
+            Add DATABASE_URL, then refresh. Spend shows up from Meta after that run.
           </p>
         </section>
       ) : null}
 
+      {error ? <p className="mt-6 max-w-xl text-sm text-[#9f2d2d]">{error}</p> : null}
+
       {data.status === "empty" ? (
         <section className="mt-10 max-w-xl">
-          <h2 className="text-xl font-semibold">Waiting for the first refresh</h2>
+          <h2 className="text-xl font-semibold">Meta numbers are not stored yet</h2>
           <p className="mt-3 text-[#6f6a62]">
-            The hourly job pulls Meta spend and, once the Amplitude secret is saved, the unique Facebook demo count.
+            Pull spend, impressions, clicks, reach, and lead forms from Meta now. The daily job also runs at 6:15am Pacific.
           </p>
+          <div className="mt-6">
+            <RefreshForm label="Refresh from Meta" />
+          </div>
         </section>
       ) : null}
 
