@@ -1,26 +1,29 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import { passwordMatches } from "@/lib/password";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   secret: process.env.AUTH_SECRET,
+  session: { strategy: "jwt" },
   providers: [
-    Google({
-      authorization: {
-        params: {
-          hd: "taxgpt.com",
-          prompt: "select_account",
-        },
+    Credentials({
+      credentials: {
+        email: {},
+        password: {},
+      },
+      authorize(credentials) {
+        const email = String(credentials.email ?? "").trim().toLowerCase();
+        const password = String(credentials.password ?? "");
+        const expectedEmail = process.env.DASHBOARD_EMAIL?.trim().toLowerCase() ?? "";
+        const expectedPassword = process.env.DASHBOARD_PASSWORD ?? "";
+        if (!email.endsWith("@taxgpt.com") || email !== expectedEmail) return null;
+        if (!passwordMatches(password, expectedPassword)) return null;
+        return { id: email, email, name: email };
       },
     }),
   ],
   pages: {
     signIn: "/sign-in",
-  },
-  callbacks: {
-    signIn({ profile }) {
-      const email = typeof profile?.email === "string" ? profile.email.toLowerCase() : "";
-      return profile?.email_verified === true && email.endsWith("@taxgpt.com");
-    },
   },
 });
