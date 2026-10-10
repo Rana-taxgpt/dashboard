@@ -1,0 +1,11 @@
+name: Refresh ads
+
+on:
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the refresh route
+        run: curl --fail-with-body -X POST -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ vars.APP_URL }}/api/cron/refresh"
